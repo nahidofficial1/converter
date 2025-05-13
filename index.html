@@ -2,132 +2,148 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Telegram Link Generator</title>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+  <title>Telegram Link Converter</title>
   <style>
     body {
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(135deg, #121212, #1a1a1a);
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top left, #0f2027, #203a43, #2c5364);
       color: white;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-      padding: 20px;
-    }.container {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 30px;
-  max-width: 600px;
-  width: 100%;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      padding: 30px;
+      overflow-x: hidden;
+    }h1 {
+  text-shadow: 0 0 15px #00f0ff;
+  font-size: 2.5em;
 }
 
-h2 {
+.container {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 25px #00f0ff;
+  padding: 25px;
+  border-radius: 20px;
+  width: 90%;
+  max-width: 700px;
   text-align: center;
-  margin-bottom: 20px;
-  font-weight: 600;
 }
 
 textarea {
   width: 100%;
   padding: 15px;
-  font-size: 16px;
-  border-radius: 12px;
+  border-radius: 10px;
   border: none;
   outline: none;
-  background: rgba(255, 255, 255, 0.1);
+  font-size: 1em;
+  margin-top: 10px;
+  box-shadow: inset 0 0 10px #00f0ff;
+  background: #101e28;
   color: white;
-  resize: vertical;
 }
 
-button, select {
+select, button {
   margin-top: 15px;
-  width: 100%;
-  padding: 12px;
-  font-size: 16px;
-  font-weight: bold;
-  color: #fff;
-  background: linear-gradient(145deg, #2e2e2e, #3c3c3c);
+  padding: 10px 20px;
   border: none;
   border-radius: 10px;
+  font-size: 1em;
   cursor: pointer;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-  transition: 0.3s;
+  box-shadow: 0 0 10px #00f0ff;
+  background: #00f0ff;
+  color: black;
 }
 
-button:hover, select:hover {
-  background: linear-gradient(145deg, #444, #555);
-}
-
-#output {
+.output {
   margin-top: 20px;
-  padding: 15px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 10px;
   white-space: pre-wrap;
-  font-size: 15px;
-  color: #aaffaa;
+  background: #0a1a24;
+  padding: 15px;
+  border-radius: 10px;
+  box-shadow: inset 0 0 15px #00f0ff;
+  color: #00f0ff;
 }
 
   </style>
 </head>
 <body>
+  <h1>Telegram Link Converter</h1>
   <div class="container">
-    <h2>Telegram Link Generator</h2>
-    <textarea id="inputNumbers" rows="8" placeholder="Enter phone numbers, one per line..."></textarea><select id="formatOption">
-  <option value="tme">t.me/+ format</option>
-  <option value="plus">+ format</option>
-</select>
-
-<select id="fileType">
-  <option value="txt">Download as .txt</option>
-  <option value="csv">Download as .csv</option>
-</select>
+    <textarea id="numberInput" rows="6" placeholder="Enter numbers, one per line"></textarea><div>
+  <label for="prefixSelect">Choose Prefix:</label>
+  <select id="prefixSelect">
+    <option value="t.me/+">t.me/+</option>
+    <option value="+">+</option>
+  </select>
+</div>
 
 <button onclick="convertNumbers()">Convert</button>
-<div id="output"></div>
 <button onclick="copyOutput()">Copy All</button>
-<button onclick="downloadFile()">Download</button>
+
+<div>
+  <label for="formatSelect">Download As:</label>
+  <select id="formatSelect">
+    <option value="csv">CSV</option>
+    <option value="txt">TXT</option>
+    <option value="xml">XML</option>
+    <option value="docx">DOCX</option>
+    <option value="xlsx">XLSX</option>
+    <option value="zip">ZIP</option>
+  </select>
+  <button onclick="downloadFile()">Download</button>
+</div>
+
+<div class="output" id="outputBox"></div>
 
   </div>  <script>
-    let finalOutput = '';
-
     function convertNumbers() {
-      const input = document.getElementById('inputNumbers').value;
-      const format = document.getElementById('formatOption').value;
-      const lines = input.split('\n').map(num => num.trim()).filter(num => /^\d{5,15}$/.test(num));
+      const input = document.getElementById('numberInput').value.trim();
+      const prefix = document.getElementById('prefixSelect').value;
+      const outputBox = document.getElementById('outputBox');
 
-      if (format === 'tme') {
-        finalOutput = lines.map(num => 't.me/+' + num).join('\n');
-      } else {
-        finalOutput = lines.map(num => '+' + num).join('\n');
+      if (!input) {
+        outputBox.textContent = 'Please enter numbers.';
+        return;
       }
 
-      document.getElementById('output').textContent = finalOutput;
+      const lines = input.split(/\n|\r/).map(num => num.trim()).filter(Boolean);
+      const converted = lines.map(num => `${prefix}${num}`).join('\n');
+      outputBox.textContent = converted;
     }
 
     function copyOutput() {
-      const output = document.getElementById('output').textContent;
-      navigator.clipboard.writeText(output).then(() => {
-        alert("Copied to clipboard!");
-      }).catch(() => {
-        alert("Copy failed. Try manually.");
-      });
+      const output = document.getElementById('outputBox').textContent;
+      navigator.clipboard.writeText(output).then(() => alert('Copied!'));
     }
 
     function downloadFile() {
-      const fileType = document.getElementById('fileType').value;
-      const blob = new Blob([finalOutput], { type: 'text/plain' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = "telegram_links." + fileType;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const format = document.getElementById('formatSelect').value;
+      const data = document.getElementById('outputBox').textContent;
+      let blob, filename = `telegram_links.${format}`;
+
+      switch(format) {
+        case 'csv':
+        case 'txt':
+          blob = new Blob([data], { type: 'text/plain' });
+          break;
+        case 'xml':
+          const xmlData = `<numbers>\n${data.split('\n').map(n => `  <number>${n}</number>`).join('\n')}\n</numbers>`;
+          blob = new Blob([xmlData], { type: 'application/xml' });
+          break;
+        case 'docx':
+        case 'xlsx':
+        case 'zip':
+          alert(`${format.toUpperCase()} download requires backend or library support.`);
+          return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
     }
   </script></body>
 </html>
