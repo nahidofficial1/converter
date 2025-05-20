@@ -1,149 +1,389 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Converter</title>
+  <title>Number Converter Tool</title>
   <style>
+    :root {
+      --dark-bg: #0f2027;
+      --light-bg: #f0f0f0;
+      --dark-text: #ffffff;
+      --light-text: #111111;
+      --accent: #00f0ff;
+    }
     body {
       margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: radial-gradient(circle at top left, #0f2027, #203a43, #2c5364);
-      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--dark-bg);
+      color: var(--dark-text);
+      transition: background 0.3s, color 0.3s;
       display: flex;
-      flex-direction: column;
+      justify-content: center;
       align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    body.light {
+      background: var(--light-bg);
+      color: var(--light-text);
+    }
+    .tool-wrapper {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
       padding: 30px;
-      overflow-x: hidden;
-    }h1 {
-  text-shadow: 0 0 15px #00f0ff;
-  font-size: 2.5em;
-}
-
-.container {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 25px #00f0ff;
-  padding: 25px;
-  border-radius: 20px;
-  width: 90%;
-  max-width: 700px;
-  text-align: center;
-}
-
-textarea {
-  width: 100%;
-  padding: 15px;
-  border-radius: 10px;
-  border: none;
-  outline: none;
-  font-size: 1em;
-  margin-top: 10px;
-  box-shadow: inset 0 0 10px #00f0ff;
-  background: #101e28;
-  color: white;
-}
-
-select, button {
-  margin-top: 15px;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 10px;
-  font-size: 1em;
-  cursor: pointer;
-  box-shadow: 0 0 10px #00f0ff;
-  background: #00f0ff;
-  color: black;
-}
-
-.output {
-  margin-top: 20px;
-  white-space: pre-wrap;
-  background: #0a1a24;
-  padding: 15px;
-  border-radius: 10px;
-  box-shadow: inset 0 0 15px #00f0ff;
-  color: #00f0ff;
-}
-
+      border-radius: 20px;
+      box-shadow: 0 0 20px var(--accent);
+      width: 100%;
+      max-width: 800px;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px var(--accent);
+    }
+    textarea, select, input[type="text"], input[type="file"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 10px;
+      border: none;
+      outline: none;
+      font-size: 1em;
+      background: #101e28;
+      color: white;
+      box-shadow: inset 0 0 5px var(--accent);
+    }
+    body.light textarea,
+    body.light select,
+    body.light input[type="text"] {
+      background: white;
+      color: #111;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 10px;
+      background: var(--accent);
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--accent);
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #00c8d8;
+    }
+    .output {
+      background: #0a1a24;
+      color: var(--accent);
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 15px;
+      white-space: pre-wrap;
+      box-shadow: inset 0 0 10px var(--accent);
+      min-height: 100px;
+    }
+    body.light .output {
+      background: #e0e0e0;
+      color: #007788;
+    }
+    .tooltip {
+      text-align: center;
+      margin-top: 5px;
+      color: lime;
+      font-size: 0.9em;
+      display: none;
+    }
+    label {
+      display: block;
+      font-size: 0.95em;
+    }
+    .stats-panel {
+      text-align: center;
+      font-size: 0.9em;
+      margin-bottom: 10px;
+      color: lime;
+    }
+    #qrcode {
+      margin-top: 20px;
+      text-align: center;
+    }
   </style>
+  <!-- External Libraries for QR code and ZIP -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.7.1/dist/jszip.min.js"></script>
 </head>
 <body>
-  <h1>Converter</h1>
-  <div class="container">
-    <textarea id="numberInput" rows="6" placeholder="Enter numbers, one per line"></textarea><div>
-  <label for="prefixSelect">Choose Prefix:</label>
-  <select id="prefixSelect">
-    <option value="t.me/+">t.me/+</option>
-    <option value="+">+</option>
-  </select>
-</div>
+  <div class="tool-wrapper">
+    <h1>Converter Tool</h1>
+    <textarea id="numberInput" rows="6" placeholder="Enter numbers, one per line"></textarea>
+    <div id="lineCounter">Lines: 0</div>
+    <div class="stats-panel" id="liveStats"></div>
+    <input type="file" id="fileInput" accept=".txt,.csv" />
+    <div class="row">
+      <label>Prefix:
+        <select id="prefixSelect" onchange="handlePrefixChange(this)">
+          <option value="t.me/+">t.me/+</option>
+          <option value="+">+</option>
+          <option value="custom">Custom...</option>
+        </select>
+      </label>
+      <input type="text" id="customPrefixInput" placeholder="Enter custom prefix" style="display:none" />
+    </div>
+    <input type="text" id="customPrefixFilterInput" placeholder="Custom prefix filter (optional)" />
+    <div class="row">
+      <label>Split Into:
+        <select id="splitCount" onchange="updatePartOptions()">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+          <option value="10">10</option>
+        </select>
+      </label>
+      <label>Part:
+        <select id="partSelect"><option value="1">Part 1</option></select>
+      </label>
+    </div>
+    <div class="row">
+      <label><input type="checkbox" id="uniqueCheck"> Unique</label>
+      <label><input type="checkbox" id="sortCheck"> Sort</label>
+      <label><input type="checkbox" id="themeToggle" onchange="toggleTheme()"> Light Mode</label>
+    </div>
+    <div class="row">
+      <button onclick="convertNumbers()">Convert</button>
+      <button onclick="copySelectedPart()">Copy</button>
+      <button onclick="undo()">Undo</button>
+      <button onclick="clearAll()">Clear</button>
+    </div>
+    <div class="row">
+      <select id="formatSelect">
+        <option value="csv">CSV</option>
+        <option value="txt">TXT</option>
+        <option value="xml">XML</option>
+      </select>
+      <input type="text" id="fileNameInput" placeholder="Filename (optional)" />
+      <button onclick="downloadFile()">Download</button>
+      <button onclick="downloadZip()">Download ZIP</button>
+    </div>
+    <div class="tooltip" id="copyTooltip">Copied!</div>
+    <div class="output" id="outputBox"></div>
+    <div id="qrcode"></div>
+  </div>
 
-<button onclick="convertNumbers()">Convert</button>
-<button onclick="copyOutput()">Copy All</button>
+<script>
+  let splitParts = [];
+  const inputArea = document.getElementById('numberInput');
+  const lineCounter = document.getElementById('lineCounter');
+  const tooltip = document.getElementById('copyTooltip');
+  const liveStats = document.getElementById('liveStats');
+  const undoStack = [];
 
-<div>
-  <label for="formatSelect">Download As:</label>
-  <select id="formatSelect">
-    <option value="csv">CSV</option>
-    <option value="txt">TXT</option>
-    <option value="xml">XML</option>
-    <option value="docx">DOCX</option>
-    <option value="xlsx">XLSX</option>
-    <option value="zip">ZIP</option>
-  </select>
-  <button onclick="downloadFile()">Download</button>
-</div>
+  // Initial push to undo stack
+  undoStack.push(inputArea.value);
 
-<div class="output" id="outputBox"></div>
+  inputArea.addEventListener('input', () => {
+    undoStack.push(inputArea.value);
+    if (undoStack.length > 50) undoStack.shift(); // Limit undo stack size
+    updateStatsAndConvert();
+  });
 
-  </div>  <script>
-    function convertNumbers() {
-      const input = document.getElementById('numberInput').value.trim();
-      const prefix = document.getElementById('prefixSelect').value;
-      const outputBox = document.getElementById('outputBox');
+  function updateStatsAndConvert() {
+    const lines = inputArea.value.trim().split(/\r?\n/).filter(Boolean);
+    lineCounter.textContent = `Lines: ${lines.length}`;
+    const uniqueLines = [...new Set(lines)].length;
+    liveStats.innerHTML = `Unique: ${uniqueLines}`;
+    convertNumbers();
+  }
 
-      if (!input) {
-        outputBox.textContent = 'Please enter numbers.';
+  function handlePrefixChange(select) {
+    document.getElementById('customPrefixInput').style.display = select.value === 'custom' ? 'block' : 'none';
+  }
+
+  function updatePartOptions() {
+    const count = parseInt(document.getElementById('splitCount').value);
+    const partSelect = document.getElementById('partSelect');
+    partSelect.innerHTML = '';
+    for (let i = 1; i <= count; i++) {
+      const option = document.createElement('option');
+      option.value = i;
+      option.textContent = `Part ${i}`;
+      partSelect.appendChild(option);
+    }
+  }
+
+  function convertNumbers() {
+    const input = inputArea.value.trim();
+    let prefix = document.getElementById('prefixSelect').value;
+    const customPrefix = document.getElementById('customPrefixInput').value;
+    const filter = document.getElementById('customPrefixFilterInput').value.trim();
+    const splitCount = parseInt(document.getElementById('splitCount').value);
+    const isUnique = document.getElementById('uniqueCheck').checked;
+    const isSort = document.getElementById('sortCheck').checked;
+    const outputBox = document.getElementById('outputBox');
+
+    if (prefix === 'custom') prefix = customPrefix;
+    if (!input) {
+      outputBox.textContent = 'Please enter numbers.';
+      clearQRCode();
+      splitParts = [];
+      return;
+    }
+
+    let lines = input.split(/\r?\n/).map(x => x.trim()).filter(Boolean);
+    if (filter) lines = lines.filter(x => x.startsWith(filter));
+    if (isUnique) lines = [...new Set(lines)];
+    if (isSort) lines.sort();
+
+    const converted = lines.map(n => `${prefix}${n}`);
+    const chunkSize = Math.ceil(converted.length / splitCount);
+    splitParts = [];
+    for (let i = 0; i < splitCount; i++) {
+      splitParts.push(converted.slice(i * chunkSize, (i + 1) * chunkSize));
+    }
+
+    const selectedPart = parseInt(document.getElementById('partSelect').value);
+    outputBox.textContent = splitParts[selectedPart - 1]?.join('\n') || '';
+
+    generateQRCode(outputBox.textContent);
+  }
+
+  function copySelectedPart() {
+    const part = parseInt(document.getElementById('partSelect').value);
+    if (splitParts.length === 0) {
+      alert('Please convert first.');
+      return;
+    }
+    const partText = splitParts[part - 1].join('\n');
+    navigator.clipboard.writeText(partText).then(() => {
+      tooltip.style.display = 'block';
+      setTimeout(() => tooltip.style.display = 'none', 1500);
+    });
+    document.getElementById('outputBox').textContent = partText;
+  }
+
+  function clearAll() {
+    inputArea.value = '';
+    document.getElementById('outputBox').textContent = '';
+    lineCounter.textContent = 'Lines: 0';
+    liveStats.textContent = '';
+    clearQRCode();
+    splitParts = [];
+  }
+
+  function toggleTheme() {
+    document.body.classList.toggle('light');
+  }
+
+  function downloadFile() {
+    const format = document.getElementById('formatSelect').value;
+    const data = document.getElementById('outputBox').textContent;
+    const name = document.getElementById('fileNameInput').value.trim() || 'telegram_links';
+    const filename = `${name}.${format}`;
+    let blob;
+
+    if (format === 'csv' || format === 'txt') {
+      blob = new Blob([data], { type: 'text/plain' });
+    } else if (format === 'xml') {
+      const xml = `<numbers>\n${data.split('\n').map(n => `  <number>${n}</number>`).join('\n')}\n</numbers>`;
+      blob = new Blob([xml], { type: 'application/xml' });
+    } else {
+      alert(`${format.toUpperCase()} download requires backend support.`);
+      return;
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+  // Undo ফাংশন
+  function undo() {
+    if (undoStack.length > 1) {
+      undoStack.pop(); // Remove current state
+      const last = undoStack[undoStack.length - 1];
+      inputArea.value = last;
+      updateStatsAndConvert();
+    } else {
+      alert('Nothing to undo.');
+    }
+  }
+
+  // QR কোড জেনারেশন
+  function generateQRCode(text) {
+    const qrDiv = document.getElementById('qrcode');
+    qrDiv.innerHTML = '';
+    if (!text.trim()) return;
+    QRCode.toCanvas(text, { width: 180, margin: 2 }, function (error, canvas) {
+      if (error) {
+        console.error(error);
         return;
       }
+      qrDiv.appendChild(canvas);
+    });
+  }
 
-      const lines = input.split(/\n|\r/).map(num => num.trim()).filter(Boolean);
-      const converted = lines.map(num => `${prefix}${num}`).join('\n');
-      outputBox.textContent = converted;
+  function clearQRCode() {
+    const qrDiv = document.getElementById('qrcode');
+    qrDiv.innerHTML = '';
+  }
+
+  // ZIP এক্সপোর্ট
+  async function downloadZip() {
+    if (splitParts.length === 0) {
+      alert('Please convert data first.');
+      return;
     }
+    const zip = new JSZip();
+    const nameBase = document.getElementById('fileNameInput').value.trim() || 'telegram_links';
+    const format = document.getElementById('formatSelect').value;
 
-    function copyOutput() {
-      const output = document.getElementById('outputBox').textContent;
-      navigator.clipboard.writeText(output).then(() => alert('Copied!'));
-    }
-
-    function downloadFile() {
-      const format = document.getElementById('formatSelect').value;
-      const data = document.getElementById('outputBox').textContent;
-      let blob, filename = `telegram_links.${format}`;
-
-      switch(format) {
-        case 'csv':
-        case 'txt':
-          blob = new Blob([data], { type: 'text/plain' });
-          break;
-        case 'xml':
-          const xmlData = `<numbers>\n${data.split('\n').map(n => `  <number>${n}</number>`).join('\n')}\n</numbers>`;
-          blob = new Blob([xmlData], { type: 'application/xml' });
-          break;
-        case 'docx':
-        case 'xlsx':
-        case 'zip':
-          alert(`${format.toUpperCase()} download requires backend or library support.`);
-          return;
+    for (let i = 0; i < splitParts.length; i++) {
+      let content = '';
+      if (format === 'csv' || format === 'txt') {
+        content = splitParts[i].join('\n');
+      } else if (format === 'xml') {
+        content = `<numbers>\n${splitParts[i].map(n => `  <number>${n}</number>`).join('\n')}\n</numbers>`;
+      } else {
+        alert('Unsupported format for ZIP export.');
+        return;
       }
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
+      zip.file(`${nameBase}_part${i + 1}.${format}`, content);
     }
-  </script></body>
-</html>
+
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${nameBase}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // Initial setup calls
+  updatePartOptions();
+  updateStatsAndConvert();
+
+  // File input drag & drop / upload support
+  document.getElementById('fileInput').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function (evt) {
+      inputArea.value = evt.target.result;
+      updateStatsAndConvert();
+    };
+    reader.readAsText(file);
+  });
+  </script>
